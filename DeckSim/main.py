@@ -4,8 +4,8 @@ import sys
 import os
 
 class Data:
-    cardpool_file = "/home/<user>/.forge/decks/constructed/Cardpool SOI.dck"
-    directory = "/home/<user>/.forge/decks/constructed/sim/"
+    cardpool_file = "/home/lando/.forge/decks/constructed/Cardpool SOI.dck"
+    directory = "/home/lando/.forge/decks/constructed/sim/"
     void = open(os.devnull, "w")
     cardpool = []
     population = []
@@ -106,7 +106,7 @@ def write_files():
     if Data.verbose == True:
         print("Writing Files...")
     for i in range(64):
-        deck_file = open("/home/<user>/.forge/decks/constructed/sim/deck{0}.dck".format(i), "w")
+        deck_file = open("/home/lando/.forge/decks/constructed/sim/deck{0}.dck".format(i), "w")
         string = "[metadata]\nName=deck{0}\n[Main]\n".format(i)
         for line in Data.population[i].genes:
             string += str(line) + "\n"
@@ -132,19 +132,17 @@ def rate():
         for j in range(0, current_field, 2):
             if Data.verbose == True:
                 print("Starting match: deck{0} vs deck{1}".format(rounds[current_round][j], rounds[current_round][j + 1]))
-            match = subprocess.check_output(["java", "-jar", "forge-gui-desktop-1.5.55-jar-with-dependencies.jar", "sim", "-d", "./sim/deck{0}.dck".format(rounds[current_round][j]), "./sim/deck{0}.dck".format(rounds[current_round][j + 1])], cwd="/home/<user>/Programme/Forge", stderr=Data.void)
+            match = subprocess.check_output(["java", "-jar", "forge-gui-desktop-1.5.55-jar-with-dependencies.jar", "sim", "-d", "./sim/deck{0}.dck".format(rounds[current_round][j]), "./sim/deck{0}.dck".format(rounds[current_round][j + 1])], cwd="/home/lando/Programme/Forge", stderr=Data.void)
             match = str(match)
             if "deck{0} has won".format(rounds[current_round][j]) in match:
                 Data.population[rounds[current_round][j]].fitness += 1
-                if Data.population[rounds[current_round][j + 1]].fitness > 10:
-                    Data.population[rounds[current_round][j + 1]].fitness = 0
+                # Data.population[rounds[current_round][j + 1]].fitness = 0
                 rounds[current_round + 1].append(rounds[current_round][j])
                 if Data.verbose == True:
                     print("deck{0} has won".format(rounds[current_round][j]))
                     print("Fitness:", Data.population[rounds[current_round][j]].fitness)
             elif "deck{0} has won".format(rounds[current_round][j + 1]) in match:
-                if Data.population[rounds[current_round][j]].fitness > 10:
-                    Data.population[rounds[current_round][j]].fitness = 0
+                # Data.population[rounds[current_round][j]].fitness = 0
                 Data.population[rounds[current_round][j + 1]].fitness += 1
                 rounds[current_round + 1].append(rounds[current_round][j + 1])
                 if Data.verbose == True:
@@ -154,37 +152,6 @@ def rate():
                 print(rounds[current_round + 1])
         current_round += 1
         current_field = int(current_field / 2)
-
-def rate_specific():
-    enemy_deck = "Angelic Fury"
-    if Data.verbose == True:
-        print("Fighting...")
-    for i in range(64):
-        if Data.verbose == True:
-            print("Starting match: deck{0} vs {1}".format(i, enemy_deck))
-        match = subprocess.check_output(["java", "-jar", "forge-gui-desktop-1.5.55-jar-with-dependencies.jar", "sim", "-d", "./sim/deck{0}.dck".format(i), "./{1}.dck".format(i, enemy_deck)], cwd="/home/<user>/Programme/Forge", stderr=Data.void)
-        match = str(match)
-        if "deck{0} has won".format(i) in match:
-            Data.population[i].fitness += 1
-            if Data.verbose == True:
-                print("deck{0} has won".format(i))
-                print("Fitness:", Data.population[i].fitness)
-        elif "{0} has won".format(enemy_deck) in match:
-            if Data.verbose == True:
-                print("{0} has won".format(enemy_deck))
-
-class DuplicateExeption(Exception):
-    def __init__(self, message):
-        print(message)
-
-def rate_duplicates():
-    if Data.verbose == True:
-        print("Rating Duplicates")
-    for i in range(64):
-        for j in range(60):
-            if Data.population[i].genes.count(Data.population[i].genes[j]) > Data.cardpool.count(Data.population[i].genes[j]):
-                Data.population[i].fitness = 0
-                raise DuplicateExeption([Data.population[i].genes[j], Data.population[i].genes.count(Data.population[i].genes[j]), Data.cardpool.count(Data.population[i].genes[j])])
 
 def sort():
     if Data.verbose == True:
@@ -290,35 +257,11 @@ def main():
         else:
             usage()
             sys.exit(2)
-    elif len(Data.args) == 4:
-        if Data.args[1] == "-v":
-            Data.verbose = True
-        else:
-            usage()
-            sys.exit(2)
-        if Data.args[2] == "-c":
-            load()
-            read_stats()
-        elif Data.args[2] == "-n":
-            seed()
-            write_files()
-        else:
-            usage()
-            sys.exit(2)
-        if Data.args[3] == "-s":
-            Data.specific = True
-        else:
-            usage()
-            sys.exit(2)
 
     while True:
         print("Generation:", Data.generation)
-        #reset_fitness()
-        if Data.specific == True:
-            rate_specific()
-        else:
-            rate()
-        rate_duplicates()
+        reset_fitness()
+        rate()
         sort()
         write_best()
         population_fitness()
