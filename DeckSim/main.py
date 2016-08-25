@@ -6,6 +6,7 @@ import os
 class Data:
     cardpool_file = "/home/lando/.forge/decks/constructed/Cardpool SOI.dck"
     directory = "/home/lando/.forge/decks/constructed/sim/"
+    forge_dir = "/home/lando/Programme/Forge/"
     void = open(os.devnull, "w")
     cardpool = []
     population = []
@@ -106,7 +107,7 @@ def write_files():
     if Data.verbose == True:
         print("Writing Files...")
     for i in range(64):
-        deck_file = open("/home/lando/.forge/decks/constructed/sim/deck{0}.dck".format(i), "w")
+        deck_file = open(Data.directory + "deck{0}.dck".format(i), "w")
         string = "[metadata]\nName=deck{0}\n[Main]\n".format(i)
         for line in Data.population[i].genes:
             string += str(line) + "\n"
@@ -118,40 +119,27 @@ def reset_fitness():
         Data.population[i].fitness = 0
 
 def rate():
-    current_round = 0
-    current_field = 64
-    rounds = []
-    for i in range(6 + 1):
-        rounds.append([])
-    for i in range(64):
-        rounds[0].append(i)
     if Data.verbose == True:
         print("Fighting...")
-    for i in range(6):
-        print("Round {0}".format(current_round + 1))
-        for j in range(0, current_field, 2):
-            if Data.verbose == True:
-                print("Starting match: deck{0} vs deck{1}".format(rounds[current_round][j], rounds[current_round][j + 1]))
-            match = subprocess.check_output(["java", "-jar", "forge-gui-desktop-1.5.55-jar-with-dependencies.jar", "sim", "-d", "./sim/deck{0}.dck".format(rounds[current_round][j]), "./sim/deck{0}.dck".format(rounds[current_round][j + 1])], cwd="/home/lando/Programme/Forge", stderr=Data.void)
-            match = str(match)
-            if "deck{0} has won".format(rounds[current_round][j]) in match:
-                Data.population[rounds[current_round][j]].fitness += 1
-                # Data.population[rounds[current_round][j + 1]].fitness = 0
-                rounds[current_round + 1].append(rounds[current_round][j])
-                if Data.verbose == True:
-                    print("deck{0} has won".format(rounds[current_round][j]))
-                    print("Fitness:", Data.population[rounds[current_round][j]].fitness)
-            elif "deck{0} has won".format(rounds[current_round][j + 1]) in match:
-                # Data.population[rounds[current_round][j]].fitness = 0
-                Data.population[rounds[current_round][j + 1]].fitness += 1
-                rounds[current_round + 1].append(rounds[current_round][j + 1])
-                if Data.verbose == True:
-                    print("deck{0} has won".format(rounds[current_round][j + 1]))
-                    print("Fitness:", Data.population[rounds[current_round][j + 1]].fitness)
-            if Data.verbose == True:
-                print(rounds[current_round + 1])
-        current_round += 1
-        current_field = int(current_field / 2)
+    args = []
+    args.append("java")
+    args.append("-jar")
+    args.append("forge-gui-desktop-1.5.55-jar-with-dependencies.jar")
+    args.append("sim")
+    args.append("-d")
+    for i in range(64):
+        args.append("./sim/deck{0}.dck".format(i))
+    args.append("-m")
+    args.append("1")
+    args.append("-t")
+    args.append("Bracket")
+    args.append("-q")
+    match = subprocess.check_output(args, cwd=Data.forge_dir, stderr=Data.void)
+    match = str(match)
+    match = match.split("\\n")
+    for line in match:
+        if "has won!" in line:
+            Data.population[int(line.split(" ")[-3].replace("deck", ""))].fitness += 1
 
 def sort():
     if Data.verbose == True:
